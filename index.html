@@ -1161,6 +1161,7 @@ a { color: inherit; }
 .board {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
   aspect-ratio: 1/1;
   width: 100%;
   border-radius: var(--radius-m);
@@ -1172,6 +1173,10 @@ a { color: inherit; }
   position: relative;
   display: grid; place-items: center;
   cursor: pointer;
+  aspect-ratio: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
   transition: background 0.1s ease;
 }
 .sq.light { background: var(--sq-light); }
@@ -1212,13 +1217,18 @@ a { color: inherit; }
 .sq.dark .file-lbl, .sq.dark .rank-lbl { color: rgba(255,255,255,0.5); }
 [data-theme="dark"] .sq.light .file-lbl, [data-theme="dark"] .sq.light .rank-lbl { color: rgba(0,0,0,0.4); }
 .pc {
-  font-size: clamp(24px, 7.4vw, 56px);
+  font-size: clamp(16px, 5.5vw, 52px);
   line-height: 1;
   user-select: none;
   filter: drop-shadow(0 1px 1px rgba(0,0,0,0.18));
   z-index: 1;
   position: relative;
   font-family: "Cormorant Garamond", serif;
+  max-width: 90%;
+  max-height: 90%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .pc.white { color: #FAF7F0; text-shadow: 0 0 1px rgba(0,0,0,0.35); }
 .pc.black { color: #1A1410; }
@@ -1674,7 +1684,8 @@ window.OPPONENTS = [
     quote: "In my country we play this game with vodka. Today I am sober. Pity for you.",
     bio: "Travels Europe with one suitcase, three openings, and a confidence that defies his rating.",
     aiHook: "balanced",
-    rewardXP: 120
+    rewardXP: 120,
+    drillChallenge: { type:"hunt", goal:65, label:"Piece Hunt · 65%+ accuracy" }
   },
   {
     id: 7, act: 2, level: 7, name: "Dr. Pekka Virtanen", title: "The Statistician",
@@ -1686,7 +1697,7 @@ window.OPPONENTS = [
     bio: "Statistician at the university. Has written three papers on chess Elo curves; refuses to play online.",
     aiHook: "positional",
     rewardXP: 140,
-    drillChallenge: { type:"hunt", goal: 80, label:"Piece Hunt · 80%+ accuracy" }
+    drillChallenge: { type:"tactic", goal:5, label:"Tactical Radar · 5+ correct" }
   },
   {
     id: 8, act: 2, level: 8, name: "Tommi Salo", title: "Blitz King",
@@ -1756,7 +1767,8 @@ window.OPPONENTS = [
     quote: "Chess is not a game. Chess is a sword.",
     bio: "Youngest of three sisters who all crossed the 2500 line. Hates the term 'female chess player'.",
     aiHook: "aggressive",
-    rewardXP: 260
+    rewardXP: 260,
+    drillChallenge: { type:"multi", label:"The Grand Trial · pass all five disciplines" }
   },
   {
     id: 14, act: 3, level: 14, name: "Vishal Ananth", title: "The Tiger",
@@ -1960,26 +1972,113 @@ window.ACTS = [
   }
 ];
 
-window.JOURNAL_SEED = [
-  {
-    id: 1, date: "Oct 12", opponent: "Eino Vainio", result: "win",
-    title: "A first cup",
-    body: "Eino smelled of pipe tobacco and old paper. He let me take a queen on move 14 — I think on purpose. \"Don't get used to it,\" he said. I drank my tea slowly. I think I'd like to come back.",
-    moves: 24, elo: 600, eloAfter: 645
+window.JOURNAL_SEED = [];
+// Journal entries are added dynamically after each battle
+
+window.JOURNAL_ENTRIES = {
+  1: {
+    win: { title:"A first cup", body:"Eino smelled of pipe tobacco and old paper. He let me take a queen on move 14 — I think on purpose. 'Don't get used to it,' he said. I drank my tea slowly. I think I'd like to come back." },
+    loss:{ title:"He didn't say much", body:"Eino played without hurry. By move 20, my pieces had nowhere useful to go. He accepted my resignation with a quiet nod and set up the board again. I ordered another tea." }
   },
-  {
-    id: 2, date: "Oct 19", opponent: "Tiina Halme", result: "win",
-    title: "Coordinates and consequences",
-    body: "She asked me to call out squares before I moved. \"You should feel the board,\" she said. By the third game, I could. The drill was harder than the game.",
-    moves: 31, elo: 645, eloAfter: 695
+  2: {
+    win: { title:"Coordinates and consequences", body:"She asked me to call out squares before I moved. 'You should feel the board,' she said. By the third round, I could. She gave a small nod when I reached her target. High praise, apparently." },
+    loss:{ title:"The geometry of failure", body:"Tiina's board has no labels. Mine had no excuses. I found too few squares, too slowly. She wrote the number in a small notebook and said nothing." }
   },
-  {
-    id: 3, date: "Nov 02", opponent: "Bess Harlow", result: "win",
-    title: "The Tonic herself",
-    body: "She walked in wearing a coat the color of the ceiling. She closed her eyes during the opening. She still saw my next four moves before I made them. The third game went the long way. I shook her hand. She did not smile.",
-    moves: 58, elo: 920, eloAfter: 1010
+  3: {
+    win: { title:"Fast enough", body:"Mikko watched me tap through the drill without blinking. 'You're not slow,' he said. From him, I understood that was the highest available compliment." },
+    loss:{ title:"Mikko counted", body:"He watched my finger hesitate over the wrong square. 'Move move move,' he muttered. My reaction time was just under his threshold. I felt every millisecond of it." }
+  },
+  4: {
+    win: { title:"Stop the brawl", body:"Joonas threw pieces at me in waves. I let the first two crash, absorbed the third, and then the center was mine. He frowned at the board afterward. 'You tricked me,' he said. I hadn't. I just didn't panic." },
+    loss:{ title:"The brawler wins", body:"The moment I hesitated on move 12, Joonas sensed it. He doesn't calculate — he just attacks, endlessly, until something gives. Today something gave. I should have been sharper." }
+  },
+  5: {
+    win: { title:"The Tonic herself", body:"She walked in wearing a coat the color of the ceiling. She closed her eyes during the opening. She still saw my next four moves before I made them. The game went the long way. I shook her hand. She did not smile." },
+    loss:{ title:"She saw it on the ceiling", body:"Bess said nothing for the first fifteen moves. Then she looked up at the ceiling, briefly, and I knew something had ended. Three moves later, she proved it. I replayed the game on the walk home." }
+  },
+  6: {
+    win: { title:"The tourist's test", body:"Aleksei set up the drill with the confidence of someone who has done it in five countries. 'In St. Petersburg they hunt faster,' he said. I found them faster. He laughed and ordered coffee." },
+    loss:{ title:"The tourist had a point", body:"Aleksei talked the whole time. I kept losing pieces in the noise. 'You see? Chess is better with conversation.' He was wrong about everything except the drill results." }
+  },
+  7: {
+    win: { title:"The statistics of surprise", body:"Dr. Virtanen claimed my probability of finding the right moves was 0.14. I found enough to prove him wrong. He updated his model without comment. I noticed he wrote the number down twice." },
+    loss:{ title:"Bayesian correction", body:"He had the results calculated before I finished. 'You need more pattern recognition,' he said, circling a number. I asked if he had a formula for improvement. He said he did. He didn't share it." }
+  },
+  8: {
+    win: { title:"Slower wins", body:"Tommi moved at a speed the human eye can barely follow. I moved slower, on purpose, and watched him run out of patience before he ran out of time. 'I don't understand slow chess,' he said. That was the point." },
+    loss:{ title:"Three seconds", body:"Tommi doesn't need more time. He proved it again today. By the time I had the position figured out, his clock showed forty seconds played and my king was already in trouble." }
+  },
+  9: {
+    win: { title:"The blueprint breaks", body:"Laine played each move like he was approving a structural drawing. I introduced a pawn break on move 19 that he hadn't designed for. He stopped, looked at the board for four minutes, then tipped his king. 'Ugly move,' he said. 'Correct, but ugly.'" },
+    loss:{ title:"Load-bearing walls", body:"I went for the bishop on move 11. Laine let me take it. By move 18, I understood why — everything I'd touched was a load-bearing wall, and now the whole structure was mine to bury." }
+  },
+  10:{
+    win: { title:"Against the morning star", body:"Murphy played like it was 1858 — swift development, open lines, pressure from move one. I answered with something he had never seen. He paused, genuinely puzzled. The pause lasted long enough. I won, not cleanly, but I won." },
+    loss:{ title:"Pieces before pawns", body:"Murphy had all his pieces developed before I had made three moves that mattered. 'Development,' he said quietly, as though reminding himself. I was reminded too, thoroughly and without mercy." }
+  },
+  11:{
+    win: { title:"The wall cracks", body:"Viktor built his position pawn by pawn, square by square, like a man laying stone. I sat behind mine and waited. On move 34, I found the crack — one pawn trade that opened everything. He nodded once. 'Correctly found,' he said." },
+    loss:{ title:"Concrete", body:"I could not find a weakness. Viktor had none. Every square covered. Every pawn accounted for. He never attacked — he simply made my position worse and worse until there was nowhere left to go." }
+  },
+  12:{
+    win: { title:"The petal falls", body:"Yuki played slowly, beautifully, like she was drawing a picture with each move. I kept the game sharp, tactical, uncomfortable. She apologized after I took her queen. I told her she had nothing to apologize for." },
+    loss:{ title:"The poem ended", body:"She played a combination on move 22 that I didn't see coming and cannot fully explain even now. It was like watching something fold. 'We will draw another poem,' she said. I think I was the paper." }
+  },
+  13:{
+    win: { title:"The Grand Trial", body:"She watched every drill without comment. Vision, reaction, hunt, tactics, memory — Judith stood with arms crossed and said nothing until the end. 'You survived,' she said. From her, I understood that meant something." },
+    loss:{ title:"The sword cuts", body:"Judith had no interest in my excuses. 'Chess is not a game. Chess is a sword.' I failed the tactics round. That was enough for her. She had already moved on before I finished." }
+  },
+  14:{
+    win: { title:"One calculation behind", body:"Vishal computes faster than I can think. But he trusts his calculation even when the board has changed. On move 26, the board had changed and he hadn't noticed. I had one move. I found it." },
+    loss:{ title:"The tiger smiles", body:"Vishal smiled through the whole game. By the time I understood I was losing, he was three moves ahead of my understanding. He shook my hand and said nothing. The smile did the talking." }
+  },
+  15:{
+    win: { title:"The storm breaks", body:"Fischler played e4. Of course he played e4. I was ready for e4. He never deviated, never disguised his intentions — and still I nearly lost. In the end, the advantage was one pawn, held for twenty-two moves. That was enough." },
+    loss:{ title:"Good moves", body:"He told me afterward: 'I don't believe in psychology. I believe in good moves.' His moves were good. Mine were not good enough. I have nothing else to say about it." }
+  },
+  16:{
+    win: { title:"A gift rejected", body:"Talviranta offered me his knight on move 15. It was a beautiful sacrifice — I almost took it. I sat with my hand over the piece and then moved the other way. The look on his face was worth more than the game." },
+    loss:{ title:"I took the gift", body:"He slid the knight forward and looked away, like it didn't matter. I took it. Twelve moves later I understood what he had seen, but by then it was far too late to do anything with the understanding." }
+  },
+  17:{
+    win: { title:"Melting the glacier", body:"Krammen defended everything for forty moves. Then I stopped attacking and just improved one piece, slowly. He frowned. On move 47, he couldn't improve his pieces anymore. That was the game. Patience had beaten patience." },
+    loss:{ title:"Frozen solid", body:"Krammen played twelve moves of theory and then began a slow squeeze I had no answer for. The position just got worse, evenly, patiently. He is not trying to beat you. He is letting you lose." }
+  },
+  18:{
+    win: { title:"Off camera", body:"Hikari narrated every move out loud, presumably for an audience I couldn't see. On move 28, there was no narration. Just silence and a resigned king. I don't know what he told his viewers afterward." },
+    loss:{ title:"Click click click", body:"Hikari moved in seconds and then waited, smiling, while I thought. He won easily, then said: 'Great game, really.' He says that every time. I've seen enough of his videos to know." }
+  },
+  19:{
+    win: { title:"One word", body:"Ding said nothing for the entire game. Afterward he looked at the board for a long moment. Then he said: 'Resourceful.' I thanked him. He was already looking at something else." },
+    loss:{ title:"The dragon was silent", body:"Ding played the endgame with perfect economy — no extra moves, no wasted tempo. He ran out my clock the way water runs down a slope. Quietly and without apology." }
+  },
+  20:{
+    win: { title:"Against the beast", body:"Kaspard arrived prepared. I had one idea that wasn't in his notes — a pawn sac on move 17 I hadn't planned either. He stopped. 'Where did you find that?' he asked. I didn't answer. I didn't know." },
+    loss:{ title:"The preparation", body:"He told me afterward that he had analyzed this exact position in 1997. He remembered every variation twenty moves deep. I had played it for the first time. There was no world in which that ended well for me." }
+  },
+  21:{
+    win: { title:"Off book", body:"Caraban recited opening theory through move 18 — names, variations, year of first play. On move 19, I deviated. He stopped reciting. By move 25, he was no longer in a library. I was better at that part." },
+    loss:{ title:"He wrote some of it", body:"On move 11, Caraban said: 'This is the Caraban Variation — I named it after myself.' I had never heard of it. He won with it. I have heard of it now, and will not forget." }
+  },
+  22:{
+    win: { title:"The cub contained", body:"Furzayan plays without fear. I had to respect that and not panic. He had the aggression; I had the defense. By the endgame, aggression without plan becomes nothing. He shook my hand without bitterness. 'Next time,' he said." },
+    loss:{ title:"Born for this", body:"He moved fast, perfectly, with the confidence of someone who has never seriously considered losing. I played carefully. It didn't help. He wins differently than anyone else — almost casually." }
+  },
+  23:{
+    win: { title:"The boa released", body:"Karpé never attacked. For forty moves, small improvements — a rook to a better file, a pawn one square forward. I did the same. On move 42, I had slightly more space. On move 58, a passed pawn. He resigned without comment." },
+    loss:{ title:"The constriction", body:"I tried everything. Karpé allowed it all. Every piece I activated, he matched. Every plan I formed, he dissolved. 'I will not strike,' he had said. He was right. He didn't need to." }
+  },
+  24:{
+    win: { title:"Against the machine", body:"It printed: EVALUATION_BEGIN. For sixty-two moves I tried to find something it hadn't calculated. On move 63, a pawn sacrifice broke its evaluation by 0.4. The output read: UNEXPECTED_RESULT. I sat in silence for a while." },
+    loss:{ title:"Six hundred million", body:"It evaluates 600 million positions per second. I evaluated perhaps 40. The outcome was predictable in retrospect. It printed: GAME_COMPLETE. I closed the screen and sat in silence for a while." }
+  },
+  25:{
+    win: { title:"The summit", body:"Karlsén played perfectly — from every angle, with no weakness I could find. I held on. Move after move. On move 71, he made a single imprecision. Not a blunder — just a move that was good but not best. I found the response. He smiled, for the first time, and offered his hand." },
+    loss:{ title:"He has 120 moves", body:"Karlsén said before the game: 'I don't need to beat you in 20 moves. I have 120.' He used 74. At move 52, I knew I was losing. At move 74, I admitted it. He shook my hand and said: 'You'll be back.' I think he meant it." }
   }
-];
+};
+// Journal titles for drill levels reference the drill, not chess
+
 
 window.PLAYER_TITLES = [
   { min: 0, name: "Pawn" },
@@ -2018,12 +2117,11 @@ window.OPENING_DEMOS = [
 ];
 
 window.DRILLS = [
-  { id: "coords", name: "Coordinate Drill", desc: "A square name appears. Tap it on the labeled board. Speed builds reflex.", glyph: "✛", duration: "30s", best: "—" },
-  { id: "vision", name: "Vision Trainer", desc: "The board has no labels at all. Pure memory and pattern.", glyph: "◐", duration: "30s", best: "—" },
-  { id: "reaction", name: "Move Reaction", desc: "A piece appears. Tap every square it could legally move to.", glyph: "↳", duration: "5 rounds", best: "—" },
-  { id: "hunt", name: "Piece Hunt", desc: "Random pieces fill the board. Find them all of one type — fast.", glyph: "◉", duration: "5 rounds", best: "—" },
-  { id: "tactic", name: "Tactical Radar", desc: "Mate in one. Forks, pins, skewers. Twelve puzzles per set.", glyph: "✦", duration: "12 puzzles", best: "—" },
-  { id: "blindfold", name: "Blindfold Lite", desc: "A position is announced in notation. Reconstruct it from memory.", glyph: "◯", duration: "Varied", best: "—" }
+  { id: "vision",    name: "Vision Trainer",  desc: "No labels on the board. A square name appears — find it from memory.", glyph: "◐", duration: "30 sec",          unit: "correct" },
+  { id: "reaction",  name: "Move Reaction",   desc: "A piece appears. Tap every square it can legally move to. 60 sec total.", glyph: "↳", duration: "5 rds · 60s", unit: "pts" },
+  { id: "hunt",      name: "Piece Hunt",      desc: "Find every piece of one type as fast as you can. 90 sec total.",          glyph: "◉", duration: "5 rds · 90s", unit: "%" },
+  { id: "tactic",    name: "Tactical Radar",  desc: "A position appears. Find the best move. 12 puzzles per set.",             glyph: "✦", duration: "12 puzzles",   unit: "/12" },
+  { id: "blindfold", name: "Blindfold Lite",  desc: "Study a position for 4 seconds. Board goes dark. Find the pieces.",       glyph: "◯", duration: "6 questions",  unit: "/6" }
 ];
 </script>
   <script>// Minimal-but-functional chess engine for ChessMind.
@@ -4251,7 +4349,7 @@ function HubScreen({ player, setPlayer, progress, onNav, onOpenStory }) {
             <div className="mode-desc">A growing record of every opponent met along the way.</div>
           </div>
           <div className="mode-footer">
-            <span>{(window.JOURNAL_SEED || []).length} entries</span>
+            <span>{(progress.journal || []).length} entries</span>
             <div className="mode-arrow">→</div>
           </div>
         </button>
@@ -4639,52 +4737,122 @@ function Dossier({ opp, onChallenge, onBack }) {
 // =========================================================
 // BATTLE SCREEN (visual demo of a chess game)
 // =========================================================
-function Battle({ opp, onFinish, onBack }) {
-  const [selected, setSelected] = React.useState(null);
-  const [hints, setHints] = React.useState([]);
-  const [position, setPosition] = React.useState(window.DEMO_POSITION);
-  const [moveLog, setMoveLog] = React.useState([
-    { n: 1, w: "e4", b: "e5" },
-    { n: 2, w: "Nf3", b: "Nc6" },
-    { n: 3, w: "Bc4", b: "" }
-  ]);
-  const [quote, setQuote] = React.useState(opp.quote);
+// Map aiHook to Engine difficulty level (0=random, 1=easy, 2=med, 3=hard, 4=expert, 5=master)
+function hookToLevel(hook) {
+  const map = {
+    easy: 0, fast: 1, tonic: 2, balanced: 2, aggressive: 2,
+    classical: 3, positional: 3, tactical: 3, machine: 5, universal: 5
+  };
+  return map[hook] ?? 2;
+}
 
-  // simple click handler — show hint dots when clicking a piece
-  function onSquare(sq, piece) {
-    if (selected === sq) { setSelected(null); setHints([]); return; }
-    if (piece && piece !== "." && piece === piece.toUpperCase()) {
-      setSelected(sq);
-      // fake legal moves — show 3-5 dots around it
-      const fakeMoves = generateFakeMoves(sq);
-      setHints(fakeMoves);
-    } else if (selected && hints.find(h => h.sq === sq)) {
-      // "make the move"
-      setSelected(null);
-      setHints([]);
-      // shift to a fake new line in the log
-      setMoveLog(l => [...l, { n: l.length + 1, w: "—", b: "—" }]);
-      // change quote
-      setQuote(randomQuote(opp));
-    } else {
-      setSelected(null); setHints([]);
+function pairMoves(history) {
+  const pairs = [];
+  for (let i = 0; i < history.length; i += 2)
+    pairs.push([history[i].san, history[i + 1] ? history[i + 1].san : null]);
+  return pairs;
+}
+
+function randomQuote(opp) {
+  const phrases = [opp.quote,
+    "Interesting choice.", "I have seen this before.", "A bold move.",
+    "Hmm.", "Don't trust me. Trust the position.",
+    "You can do better than that.", "The center is mine now."];
+  return phrases[Math.floor(Math.random() * phrases.length)];
+}
+
+function Battle({ opp, player, onFinish, onBack }) {
+  const E = window.Engine;
+  const aiLevel = hookToLevel(opp.aiHook);
+
+  const [game, setGame] = React.useState(() => E.newGame());
+  const [sel, setSel] = React.useState(null);
+  const [hints, setHints] = React.useState([]);
+  const [thinking, setThinking] = React.useState(false);
+  const [over, setOver] = React.useState(null);
+  const [pendingPromo, setPendingPromo] = React.useState(null);
+  const [quote, setQuote] = React.useState(opp.quote);
+  const logRef = React.useRef(null);
+
+  // Player always plays white in story mode
+  const playerColor = 'w';
+
+  React.useEffect(() => {
+    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
+  }, [game.history.length]);
+
+  function finishMove(after) {
+    setSel(null); setHints([]);
+    if (Math.random() < 0.28) setQuote(randomQuote(opp));
+    const status = E.isGameOver(after);
+    if (status.over) {
+      setGame(after); setOver(status);
+      const outcome = status.result === '1-0' ? 'win' : status.result === '0-1' ? 'loss' : 'draw';
+      onFinish({ outcome, moves: after.history.length });
+      return;
+    }
+    // AI turn
+    setThinking(true);
+    setGame(after);
+    setTimeout(() => {
+      const mv = E.aiMove(after, aiLevel);
+      if (!mv) { setThinking(false); return; }
+      const afterAI = E.applyMove(after, mv);
+      if (Math.random() < 0.22) setQuote(randomQuote(opp));
+      setGame(afterAI);
+      setThinking(false);
+      const s2 = E.isGameOver(afterAI);
+      if (s2.over) {
+        setOver(s2);
+        const outcome = s2.result === '1-0' ? 'win' : s2.result === '0-1' ? 'loss' : 'draw';
+        onFinish({ outcome, moves: afterAI.history.length });
+      }
+    }, 250 + Math.random() * 500);
+  }
+
+  function onSquare(sq) {
+    if (thinking || over || game.turn !== playerColor) return;
+    const [r, c] = E.sqToRc(sq);
+    const piece = game.board[r][c];
+    const isOwn = piece !== '.' && piece === piece.toUpperCase();
+
+    if (sel) {
+      const hit = hints.find(h => h.sq === sq);
+      if (hit) {
+        if (hit.promo) { setPendingPromo({ from: sel, to: sq }); return; }
+        const after = E.makeMove(game, sel, sq);
+        if (after) finishMove(after);
+      } else if (isOwn) {
+        setSel(sq);
+        setHints(E.moves(game, sq).map(m => ({ sq: E.rcToSq(m.to[0], m.to[1]), capture: m.capture, promo: m.promo })));
+      } else { setSel(null); setHints([]); }
+    } else if (isOwn) {
+      setSel(sq);
+      setHints(E.moves(game, sq).map(m => ({ sq: E.rcToSq(m.to[0], m.to[1]), capture: m.capture, promo: m.promo })));
     }
   }
 
-  function resign() {
-    onFinish({ outcome: 'loss', moves: moveLog.length });
+  function completePromo(piece) {
+    if (!pendingPromo) return;
+    const after = E.makeMove(game, pendingPromo.from, pendingPromo.to, piece);
+    setPendingPromo(null);
+    if (after) finishMove(after);
   }
-  function declareWin() {
-    onFinish({ outcome: 'win', moves: moveLog.length });
-  }
+
+  const checked = E.isCheck(game) && !over;
+  const turnLabel = over ? (over.reason === 'checkmate' ? 'Checkmate!' : over.reason === 'stalemate' ? 'Stalemate — draw' : 'Draw')
+    : thinking ? `${opp.name} is thinking…`
+    : game.turn === playerColor ? (checked ? '⚠ Check! Your turn' : 'Your turn') : `${opp.name}'s turn`;
+
+  const pairs = pairMoves(game.history);
 
   return (
     <div>
-      <div style={{ padding: '20px 24px 0', maxWidth: 1400, margin: '0 auto' }}>
-        <BackBtn onClick={onBack} label="Retreat" />
+      <div style={{ padding: '16px 16px 0', maxWidth: 1400, margin: '0 auto' }}>
+        <BackBtn onClick={() => { if (window.confirm('Retreat? The game will be lost.')) onBack(); }} label="Retreat" />
       </div>
       <div className="battle">
-        {/* Left side — opponent + chat */}
+        {/* Left: opponent + notation */}
         <div className="battle-side">
           <div className="opp-banner">
             <div className="ob-portrait"><Portrait data={opp} /></div>
@@ -4692,95 +4860,70 @@ function Battle({ opp, onFinish, onBack }) {
               <div className="ob-name">{opp.name}</div>
               <div className="ob-sub">{opp.title} · Elo {opp.elo}</div>
             </div>
-            <div className="clock">04:32</div>
           </div>
-          <div className="move-log">
+          <div className="move-log" ref={logRef}>
             <h4>Notation</h4>
-            {moveLog.map((m, i) => (
+            {pairs.length === 0 && <div style={{ color:'var(--ink-mute)', fontStyle:'italic', fontSize: 13, fontFamily:'var(--f-display)' }}>No moves yet.</div>}
+            {pairs.map((pair, i) => (
               <div key={i} className="move-row">
-                <span className="n">{m.n}.</span>
-                <span className="m">{m.w}</span>
-                <span className="m">{m.b}</span>
+                <span className="n">{i+1}.</span>
+                <span className="m">{pair[0]}</span>
+                <span className="m">{pair[1] || ''}</span>
               </div>
             ))}
           </div>
           <div className="battle-quote">"{quote}"</div>
         </div>
 
-        {/* Center — board */}
+        {/* Center: board */}
         <div className="battle-board">
-          <ChessBoard
-            position={position}
-            selected={selected}
-            hints={hints}
-            onSquare={onSquare}
-            theme="cinematic"
-          />
-          {/* Player banner under board */}
+          <ChessBoard position={game.board} selected={sel} hints={hints} onSquare={onSquare} theme="cinematic" />
           <div className="opp-banner" style={{ marginTop: 16, marginBottom: 0 }}>
-            <div className="ob-portrait" style={{ borderColor: 'var(--ink-mute)' }}>
-              <ChessPieceAvatar kind="bishop" palette="ivory" />
+            <div className="ob-portrait" style={{ borderColor: 'var(--ink-mute)', overflow:'hidden' }}>
+              <ChessPieceAvatar kind={player?.avatar?.piece || 'pawn'} palette={player?.avatar?.palette || 'ivory'} />
             </div>
             <div>
-              <div className="ob-name">You</div>
-              <div className="ob-sub">{titleForElo(1100)} · Elo 1100</div>
+              <div className="ob-name">{player?.name || 'You'}</div>
+              <div className="ob-sub">{titleForElo(player?.elo || 600)} · Elo {player?.elo || 600}</div>
             </div>
-            <div className="clock">05:48</div>
+          </div>
+          <div style={{ textAlign:'center', marginTop: 10, color: checked ? 'var(--crimson)' : over ? 'var(--accent)' : thinking ? 'var(--ink-mute)' : 'var(--ink-soft)', fontFamily:'var(--f-mono)', fontSize: 11, letterSpacing:'0.16em', textTransform:'uppercase', transition:'color 0.3s' }}>
+            {turnLabel}
           </div>
         </div>
 
-        {/* Right side — controls / captures */}
+        {/* Right: info + resign */}
         <div className="battle-aux">
           <div className="card tight">
-            <Eyebrow>Captured</Eyebrow>
-            <div className="captured">♟ ♟ ♟</div>
-            <hr className="hr" style={{ margin: '12px 0' }} />
-            <Eyebrow>You took</Eyebrow>
-            <div className="captured">♙ ♙</div>
+            <Eyebrow accent>Opponent</Eyebrow>
+            <div style={{ fontFamily:'var(--f-display)', fontStyle:'italic', fontSize: 14, color:'var(--ink-soft)', marginTop: 6, lineHeight: 1.55 }}>{opp.style}</div>
           </div>
           <div className="card tight" style={{ marginTop: 12 }}>
-            <Eyebrow accent>Battle</Eyebrow>
-            <div style={{ display:'flex', flexDirection:'column', gap: 8, marginTop: 10 }}>
-              <button className="btn ghost sm" onClick={() => setHints([])}>Offer draw</button>
-              <button className="btn gold sm" onClick={declareWin}>Declare victory (demo)</button>
-              <button className="btn ghost sm" onClick={resign}>Resign</button>
+            <div style={{ display:'flex', flexDirection:'column', gap: 8 }}>
+              <button className="btn ghost sm" onClick={() => { if (window.confirm('Resign this game?')) onFinish({ outcome: 'loss', moves: game.history.length }); }}>Resign</button>
             </div>
-            <p style={{ fontSize: 12, color: 'var(--ink-mute)', marginTop: 12, marginBottom: 0, lineHeight: 1.5 }}>
-              <em>This is the design layer.</em> The engine ports in from the existing build.
-            </p>
           </div>
         </div>
       </div>
+
+      {/* Promotion picker */}
+      {pendingPromo && (
+        <div className="cutscene" onClick={() => setPendingPromo(null)}>
+          <div onClick={e => e.stopPropagation()} style={{ background:'var(--bg-elev)', padding: 32, borderRadius: 18, border:'1px solid var(--rule)', maxWidth: 360, textAlign:'center' }}>
+            <Eyebrow accent>Promotion</Eyebrow>
+            <h2 className="display" style={{ fontSize: 24, marginTop: 6 }}>Choose a piece</h2>
+            <div style={{ display:'flex', gap: 12, justifyContent:'center', marginTop: 20 }}>
+              {["q","r","b","n"].map(p => (
+                <button key={p} className="btn ghost" onClick={() => completePromo(p)} style={{ width: 60, height: 60, fontSize: 32 }}>
+                  {window.PIECE_GLYPHS[p.toUpperCase()]}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
-
-function generateFakeMoves(sq) {
-  const file = sq.charCodeAt(0) - 97;
-  const rank = parseInt(sq[1], 10);
-  const out = [];
-  const offsets = [[0,1],[1,1],[-1,1],[0,2]];
-  for (const [df, dr] of offsets) {
-    const nf = file + df, nr = rank + dr;
-    if (nf >= 0 && nf < 8 && nr >= 1 && nr <= 8) {
-      out.push({ sq: String.fromCharCode(97 + nf) + nr, capture: false });
-    }
-  }
-  return out;
-}
-
-function randomQuote(opp) {
-  const phrases = [
-    opp.quote,
-    "Interesting choice.",
-    "I have seen this before.",
-    "A bold move.",
-    "Hmm.",
-    "Don't trust me. Trust the position.",
-    "You can do better than that.",
-    "The center is mine now."
-  ];
-  return phrases[Math.floor(Math.random() * phrases.length)];
 }
 
 Object.assign(window, { OdysseiaMap, Cutscene, Dossier, Battle });
@@ -4850,7 +4993,31 @@ function PlayScreen({ onBack }) {
 // =========================================================
 // DRILLS
 // =========================================================
+// ── Drill records (localStorage) ─────────────────────────────────
+const DRILL_KEY = 'cm_drill_bests';
+function getDrillBests() {
+  try { return JSON.parse(localStorage.getItem(DRILL_KEY) || '{}'); } catch(e) { return {}; }
+}
+function saveDrillBest(id, score) {
+  const b = getDrillBests();
+  if (b[id] === undefined || score > b[id]) {
+    b[id] = score;
+    localStorage.setItem(DRILL_KEY, JSON.stringify(b));
+    return true;
+  }
+  return false;
+}
+function fmtBest(id, unit) {
+  const b = getDrillBests();
+  return b[id] !== undefined ? b[id] + (unit || '') : '—';
+}
+Object.assign(window, { getDrillBests, saveDrillBest, fmtBest });
+
 function DrillsScreen({ onBack, onPickDrill }) {
+  const [bests, setBests] = React.useState(getDrillBests());
+  // Refresh bests when returning to this screen
+  React.useEffect(() => { setBests(getDrillBests()); }, []);
+
   return (
     <div className="page">
       <BackBtn onClick={onBack} />
@@ -4861,20 +5028,27 @@ function DrillsScreen({ onBack, onPickDrill }) {
       </p>
 
       <div className="modes-grid">
-        {window.DRILLS.map(d => (
-          <button key={d.id} className="mode-card" onClick={() => onPickDrill && onPickDrill(d)}>
-            <div className="mode-glyph">{d.glyph}</div>
-            <div>
-              <div className="mode-eyebrow">{d.duration}</div>
-              <div className="mode-name" style={{ fontSize: 22 }}>{d.name}</div>
-              <div className="mode-desc">{d.desc}</div>
-            </div>
-            <div className="mode-footer">
-              <span>Best · {d.best}</span>
-              <div className="mode-arrow">→</div>
-            </div>
-          </button>
-        ))}
+        {window.DRILLS.map(d => {
+          const best = bests[d.id];
+          const bestLabel = best !== undefined ? best + (d.unit || '') : '—';
+          const isNewRecord = best !== undefined;
+          return (
+            <button key={d.id} className="mode-card" onClick={() => { setBests(getDrillBests()); onPickDrill && onPickDrill(d); }}>
+              <div className="mode-glyph">{d.glyph}</div>
+              <div>
+                <div className="mode-eyebrow">{d.duration}</div>
+                <div className="mode-name" style={{ fontSize: 22 }}>{d.name}</div>
+                <div className="mode-desc">{d.desc}</div>
+              </div>
+              <div className="mode-footer">
+                <span style={{ color: isNewRecord ? 'var(--accent)' : 'var(--ink-mute)' }}>
+                  {isNewRecord ? '★ ' : ''}Best · {bestLabel}
+                </span>
+                <div className="mode-arrow">→</div>
+              </div>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -5007,15 +5181,23 @@ function openingPosition(name) {
 // JOURNAL
 // =========================================================
 function JournalScreen({ progress, onBack }) {
-  const entries = window.JOURNAL_SEED;
+  const entries = progress.journal || [];
   return (
     <div className="page narrow">
       <BackBtn onClick={onBack} />
       <Eyebrow accent>Archive</Eyebrow>
       <h1 className="display" style={{ fontSize: 44, margin: '12px 0 8px' }}>Your Journal.</h1>
       <p style={{ color: 'var(--ink-soft)', fontStyle: 'italic', fontFamily:'var(--f-display)', fontSize: 18, marginBottom: 40, maxWidth: 580 }}>
-        A growing record. Every entry is the residue of a game — what happened, who you became.
+        A growing record. Every entry is written after a game — what happened, who you became.
       </p>
+
+      {entries.length === 0 && (
+        <div style={{ textAlign:'center', padding: '60px 20px', color:'var(--ink-mute)' }}>
+          <div style={{ fontFamily:'var(--f-display)', fontSize: 48, marginBottom: 12 }}>✎</div>
+          <div style={{ fontFamily:'var(--f-display)', fontStyle:'italic', fontSize: 20, marginBottom: 8 }}>No entries yet.</div>
+          <div style={{ fontSize: 14 }}>Play a game in Odysseia and your first entry will appear here.</div>
+        </div>
+      )}
 
       <div className="journal-grid">
         {entries.map(e => (
@@ -5028,18 +5210,11 @@ function JournalScreen({ progress, onBack }) {
                 {e.opponent}
               </div>
               <div style={{ fontFamily:'var(--f-mono)', fontSize: 12, color:'var(--ink-soft)' }}>
-                Elo {e.elo} → {e.eloAfter}
+                {e.moves} moves · Elo {e.elo} → {e.eloAfter}
               </div>
             </div>
           </div>
         ))}
-      </div>
-
-      <div style={{ marginTop: 40, padding: 32, background:'var(--bg-inset)', borderRadius: 18, textAlign:'center' }}>
-        <Eyebrow>Coming next</Eyebrow>
-        <p style={{ maxWidth: 540, margin: '8px auto 0', color: 'var(--ink-soft)', fontStyle:'italic', fontFamily:'var(--f-display)', fontSize: 16 }}>
-          After every battle, an entry will be written automatically — drawing on the moves you played, the moments that surprised you, and the opponent's reactions.
-        </p>
       </div>
     </div>
   );
@@ -5426,97 +5601,6 @@ function randSquare() {
   return FILES[Math.floor(Math.random() * 8)] + (1 + Math.floor(Math.random() * 8));
 }
 
-// -------- COORDINATE DRILL --------
-function CoordinateDrill({ onBack, target = null, onFinish }) {
-  const DURATION = 30;
-  const [time, setTime] = React.useState(DURATION);
-  const [score, setScore] = React.useState(0);
-  const [streak, setStreak] = React.useState(0);
-  const [best, setBest] = React.useState(0);
-  const [current, setCurrent] = React.useState(randSquare());
-  const [feedback, setFeedback] = React.useState(null);
-  const [done, setDone] = React.useState(false);
-
-  React.useEffect(() => {
-    if (done) return;
-    const t = setInterval(() => setTime(x => x - 1), 1000);
-    return () => clearInterval(t);
-  }, [done]);
-
-  React.useEffect(() => {
-    if (time <= 0 && !done) {
-      setDone(true);
-      onFinish && onFinish({ score, ok: target ? score >= target : true });
-    }
-  }, [time, done, score, onFinish, target]);
-
-  function tap(sq) {
-    if (done) return;
-    if (sq === current) {
-      setScore(s => s + 1);
-      setStreak(s => { const n = s + 1; setBest(b => Math.max(b, n)); return n; });
-      setFeedback({ ok: true, sq });
-    } else {
-      setStreak(0);
-      setFeedback({ ok: false, sq });
-    }
-    setTimeout(() => setFeedback(null), 220);
-    setCurrent(randSquare());
-  }
-
-  if (done) {
-    return (
-      <div className="page narrow" style={{ textAlign:'center' }}>
-        <BackBtn onClick={onBack} />
-        <Eyebrow accent>Time's up</Eyebrow>
-        <h2 className="display" style={{ fontSize: 44, margin: '12px 0' }}>You found <em style={{ color:'var(--accent)', fontStyle:'italic' }}>{score}</em>.</h2>
-        {target != null && (
-          <div style={{ marginTop: 12, fontFamily:'var(--f-display)', fontStyle:'italic', fontSize: 18, color: score >= target ? 'var(--jade)' : 'var(--crimson)' }}>
-            {score >= target ? `Target met (≥ ${target}).` : `Target was ${target}.`}
-          </div>
-        )}
-        <div style={{ marginTop: 20, fontFamily:'var(--f-mono)', fontSize: 12, color:'var(--ink-mute)', letterSpacing: '0.2em', textTransform:'uppercase' }}>
-          Best streak · {best}
-        </div>
-        <div style={{ display:'flex', gap: 8, justifyContent:'center', marginTop: 24 }}>
-          <button className="btn ghost" onClick={onBack}>Back</button>
-          <button className="btn gold" onClick={() => { setScore(0); setTime(DURATION); setStreak(0); setBest(0); setCurrent(randSquare()); setDone(false); }}>Play again</button>
-        </div>
-      </div>
-    );
-  }
-
-  const playerHints = feedback ? [{ sq: feedback.sq, capture: false }] : [];
-
-  return (
-    <div className="page narrow">
-      <BackBtn onClick={onBack} />
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom: 16 }}>
-        <div>
-          <Eyebrow accent>Coordinate Drill</Eyebrow>
-          <div style={{ fontFamily:'var(--f-display)', fontSize: 22, fontWeight: 500, marginTop: 2 }}>Find the square.</div>
-        </div>
-        <div style={{ display:'flex', gap: 16 }}>
-          <DrillStat label="Time" value={time + "s"} />
-          <DrillStat label="Score" value={score} />
-          <DrillStat label="Streak" value={streak} />
-        </div>
-      </div>
-      <div style={{ textAlign:'center', margin: '20px 0' }}>
-        <div style={{ fontFamily:'var(--f-display)', fontSize: 64, fontWeight: 500, color: feedback ? (feedback.ok ? 'var(--jade)' : 'var(--crimson)') : 'var(--accent)', letterSpacing: '-0.02em', transition:'color 0.2s' }}>
-          {current.toUpperCase()}
-        </div>
-      </div>
-      <div style={{ maxWidth: 500, margin: '0 auto' }}>
-        <ChessBoard
-          position={emptyBoard()}
-          hints={playerHints}
-          onSquare={tap}
-        />
-      </div>
-    </div>
-  );
-}
 
 // -------- VISION TRAINER (no labels) --------
 function VisionDrill({ onBack, target = null, onFinish }) {
@@ -5535,6 +5619,7 @@ function VisionDrill({ onBack, target = null, onFinish }) {
   React.useEffect(() => {
     if (time <= 0 && !done) {
       setDone(true);
+      saveDrillBest('vision', score);
       onFinish && onFinish({ score, ok: target ? score >= target : true });
     }
   }, [time, done, score, onFinish, target]);
@@ -5564,6 +5649,7 @@ function VisionDrill({ onBack, target = null, onFinish }) {
         )}
         <div style={{ display:'flex', gap: 8, justifyContent:'center', marginTop: 24 }}>
           <button className="btn ghost" onClick={onBack}>Back</button>
+          <div style={{ marginTop:6, fontFamily:'var(--f-mono)', fontSize:11, color:'var(--ink-mute)', letterSpacing:'0.14em' }}>Personal best: {fmtBest('vision',' correct')}</div>
           <button className="btn gold" onClick={() => { setScore(0); setTime(DURATION); setCurrent(randSquare()); setDone(false); }}>Play again</button>
         </div>
       </div>
@@ -5600,8 +5686,10 @@ function VisionDrill({ onBack, target = null, onFinish }) {
 function MoveReactionDrill({ onBack, target = null, onFinish }) {
   const PIECES = ["N", "B", "R", "Q", "K"];
   const ROUNDS = 5;
+  const TIME_LIMIT = 60;
   const [round, setRound] = React.useState(1);
   const [score, setScore] = React.useState(0);
+  const [timeLeft, setTimeLeft] = React.useState(TIME_LIMIT);
   const [pieceSq, setPieceSq] = React.useState(null);
   const [piece, setPiece] = React.useState(null);
   const [legalSet, setLegalSet] = React.useState(new Set());
@@ -5635,6 +5723,14 @@ function MoveReactionDrill({ onBack, target = null, onFinish }) {
 
   React.useEffect(() => { setupRound(); }, []);
 
+  // Time countdown
+  React.useEffect(() => {
+    if (done) return;
+    if (timeLeft <= 0) { setDone(true); saveDrillBest('reaction', score); onFinish && onFinish({ score, ok: target ? score >= target : true }); return; }
+    const t = setTimeout(() => setTimeLeft(x => x - 1), 1000);
+    return () => clearTimeout(t);
+  }, [timeLeft, done]);
+
   function tap(sq) {
     if (revealed || sq === pieceSq) return;
     if (picked.has(sq)) { picked.delete(sq); setPicked(new Set(picked)); return; }
@@ -5658,6 +5754,7 @@ function MoveReactionDrill({ onBack, target = null, onFinish }) {
   function next() {
     if (round >= ROUNDS) {
       setDone(true);
+      saveDrillBest('reaction', score);
       onFinish && onFinish({ score, ok: target ? score >= target : true });
     } else {
       setRound(r => r + 1);
@@ -5669,16 +5766,19 @@ function MoveReactionDrill({ onBack, target = null, onFinish }) {
     return (
       <div className="page narrow" style={{ textAlign:'center' }}>
         <BackBtn onClick={onBack} />
-        <Eyebrow accent>Drill complete</Eyebrow>
-        <h2 className="display" style={{ fontSize: 44, margin: '12px 0' }}>Move Reaction · <em style={{ color:'var(--accent)', fontStyle:'italic' }}>{score}</em> points</h2>
+        <Eyebrow accent>Move Reaction · complete</Eyebrow>
+        <h2 className="display" style={{ fontSize: 44, margin: '12px 0' }}><em style={{ color:'var(--accent)', fontStyle:'italic' }}>{score}</em> pts</h2>
         {target != null && (
           <div style={{ marginTop: 12, fontFamily:'var(--f-display)', fontStyle:'italic', fontSize: 18, color: score >= target ? 'var(--jade)' : 'var(--crimson)' }}>
             {score >= target ? `Target met (≥ ${target}).` : `Needed ${target} total.`}
           </div>
         )}
+        <div style={{ marginTop: 6, fontFamily:'var(--f-mono)', fontSize: 11, color:'var(--ink-mute)', letterSpacing:'0.14em' }}>
+          Personal best: {fmtBest('reaction',' pts')}
+        </div>
         <div style={{ display:'flex', gap: 8, justifyContent:'center', marginTop: 24 }}>
           <button className="btn ghost" onClick={onBack}>Back</button>
-          <button className="btn gold" onClick={() => { setRound(1); setScore(0); setDone(false); setupRound(); }}>Play again</button>
+          <button className="btn gold" onClick={() => { setRound(1); setScore(0); setTimeLeft(TIME_LIMIT); setDone(false); setupRound(); }}>Play again</button>
         </div>
       </div>
     );
@@ -5702,9 +5802,12 @@ function MoveReactionDrill({ onBack, target = null, onFinish }) {
   return (
     <div className="page narrow">
       <BackBtn onClick={onBack} />
+      <div style={{ width:'100%', height:4, background:'var(--rule)', borderRadius:99, overflow:'hidden', marginBottom:10 }}>
+        <div style={{ width:(timeLeft/TIME_LIMIT*100)+'%', height:'100%', background: timeLeft<15?'var(--crimson)':(timeLeft<30?'var(--accent-deep)':'var(--accent)'), transition:'width 1s linear, background 0.3s', borderRadius:99 }} />
+      </div>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom: 12 }}>
         <div>
-          <Eyebrow accent>Move Reaction · Round {round}/{ROUNDS}</Eyebrow>
+          <Eyebrow accent>Move Reaction · Round {round}/{ROUNDS} · {timeLeft}s</Eyebrow>
           <div style={{ fontFamily:'var(--f-display)', fontSize: 26, fontWeight: 500, marginTop: 4 }}>
             Where can the <em style={{ color:'var(--accent)', fontStyle:'italic' }}>{pieceName}</em> move?
           </div>
@@ -5735,7 +5838,9 @@ function MoveReactionDrill({ onBack, target = null, onFinish }) {
 function PieceHuntDrill({ onBack, target = null, onFinish }) {
   const PIECES = ["N", "B", "R", "Q"];
   const ROUNDS = 5;
+  const TIME_LIMIT = 90;
   const [round, setRound] = React.useState(1);
+  const [timeLeft, setTimeLeft] = React.useState(TIME_LIMIT);
   const [board, setBoard] = React.useState([]);
   const [target_piece, setTargetPiece] = React.useState(null);
   const [picked, setPicked] = React.useState(new Set());
@@ -5768,6 +5873,18 @@ function PieceHuntDrill({ onBack, target = null, onFinish }) {
 
   React.useEffect(() => { setupRound(); }, []);
 
+  // Time countdown
+  React.useEffect(() => {
+    if (done) return;
+    if (timeLeft <= 0) {
+      const acc = stats.totalPicked === 0 ? 0 : Math.round((stats.totalCorrect / stats.totalPicked) * 100);
+      setDone(true); saveDrillBest('hunt', acc); onFinish && onFinish({ score: acc, ok: target ? acc >= target : true });
+      return;
+    }
+    const t = setTimeout(() => setTimeLeft(x => x - 1), 1000);
+    return () => clearTimeout(t);
+  }, [timeLeft, done, stats]);
+
   function tap(sq) {
     if (revealed) return;
     if (picked.has(sq)) { picked.delete(sq); setPicked(new Set(picked)); }
@@ -5786,7 +5903,7 @@ function PieceHuntDrill({ onBack, target = null, onFinish }) {
   function next() {
     if (round >= ROUNDS) {
       const acc = stats.totalPicked === 0 ? 0 : Math.round((stats.totalCorrect / stats.totalPicked) * 100);
-      setDone(true);
+      setDone(true); saveDrillBest('hunt', acc);
       onFinish && onFinish({ score: acc, ok: target ? acc >= target : true });
     } else {
       setRound(r => r + 1);
@@ -5799,16 +5916,19 @@ function PieceHuntDrill({ onBack, target = null, onFinish }) {
     return (
       <div className="page narrow" style={{ textAlign:'center' }}>
         <BackBtn onClick={onBack} />
-        <Eyebrow accent>Hunt complete</Eyebrow>
+        <Eyebrow accent>Piece Hunt · complete</Eyebrow>
         <h2 className="display" style={{ fontSize: 44, margin: '12px 0' }}>Accuracy · <em style={{ color:'var(--accent)', fontStyle:'italic' }}>{acc}%</em></h2>
         {target != null && (
           <div style={{ marginTop: 12, fontFamily:'var(--f-display)', fontStyle:'italic', fontSize: 18, color: acc >= target ? 'var(--jade)' : 'var(--crimson)' }}>
             {acc >= target ? `Target met (≥ ${target}%).` : `Needed ${target}%.`}
           </div>
         )}
+        <div style={{ marginTop: 6, fontFamily:'var(--f-mono)', fontSize: 11, color:'var(--ink-mute)', letterSpacing:'0.14em' }}>
+          Personal best: {fmtBest('hunt','%')}
+        </div>
         <div style={{ display:'flex', gap: 8, justifyContent:'center', marginTop: 24 }}>
           <button className="btn ghost" onClick={onBack}>Back</button>
-          <button className="btn gold" onClick={() => { setRound(1); setStats({ totalCorrect: 0, totalPicked: 0 }); setDone(false); setupRound(); }}>Play again</button>
+          <button className="btn gold" onClick={() => { setRound(1); setTimeLeft(TIME_LIMIT); setStats({ totalCorrect: 0, totalPicked: 0 }); setDone(false); setupRound(); }}>Play again</button>
         </div>
       </div>
     );
@@ -5834,9 +5954,12 @@ function PieceHuntDrill({ onBack, target = null, onFinish }) {
   return (
     <div className="page narrow">
       <BackBtn onClick={onBack} />
+      <div style={{ width:'100%', height:4, background:'var(--rule)', borderRadius:99, overflow:'hidden', marginBottom:10 }}>
+        <div style={{ width:(timeLeft/TIME_LIMIT*100)+'%', height:'100%', background: timeLeft<20?'var(--crimson)':(timeLeft<45?'var(--accent-deep)':'var(--accent)'), transition:'width 1s linear, background 0.3s', borderRadius:99 }} />
+      </div>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom: 12 }}>
         <div>
-          <Eyebrow accent>Piece Hunt · Round {round}/5</Eyebrow>
+          <Eyebrow accent>Piece Hunt · Round {round}/5 · {timeLeft}s</Eyebrow>
           <div style={{ fontFamily:'var(--f-display)', fontSize: 26, fontWeight: 500, marginTop: 4 }}>
             Find every <em style={{ color:'var(--accent)', fontStyle:'italic' }}>{pieceName}</em>.
           </div>
@@ -5853,25 +5976,320 @@ function PieceHuntDrill({ onBack, target = null, onFinish }) {
   );
 }
 
-// -------- HOST --------
-function DrillRunner({ drillId, onBack, target = null, onFinish }) {
-  if (drillId === "coords" || drillId === "coord") return <CoordinateDrill onBack={onBack} target={target} onFinish={onFinish} />;
-  if (drillId === "vision") return <VisionDrill onBack={onBack} target={target} onFinish={onFinish} />;
-  if (drillId === "reaction") return <MoveReactionDrill onBack={onBack} target={target} onFinish={onFinish} />;
-  if (drillId === "hunt") return <PieceHuntDrill onBack={onBack} target={target} onFinish={onFinish} />;
+// -------- TACTICAL RADAR --------
+function TacticalRadarDrill({ onBack, target = null, onFinish }) {
+  const TOTAL = 12;
+  const E = window.Engine;
+  const [puzzles, setPuzzles] = React.useState([]);
+  const [idx, setIdx] = React.useState(0);
+  const [score, setScore] = React.useState(0);
+  const [sel, setSel] = React.useState(null);
+  const [hints, setHints] = React.useState([]);
+  const [feedback, setFeedback] = React.useState(null);
+  const [done, setDone] = React.useState(false);
+  const [loading, setLoading] = React.useState(true);
+
+  function genPuzzles() {
+    setLoading(true); setSel(null); setHints([]); setFeedback(null); setIdx(0); setScore(0); setDone(false);
+    setTimeout(() => {
+      const ps = [];
+      let attempts = 0;
+      while (ps.length < TOTAL && attempts < 120) {
+        attempts++;
+        let g = E.newGame();
+        const moves = 6 + Math.floor(Math.random() * 10);
+        for (let i = 0; i < moves; i++) {
+          const mv = E.aiMove(g, 0);
+          if (!mv) break;
+          g = E.applyMove(g, mv);
+          if (E.isGameOver(g).over) break;
+        }
+        if (E.isGameOver(g).over) continue;
+        const legal = E.moves(g);
+        if (legal.length < 3) continue;
+        const best = E.aiMove(g, 2);
+        if (!best) continue;
+        ps.push({
+          board: g.board.map(r => [...r]),
+          turn: g.turn,
+          from: E.rcToSq(best.from[0], best.from[1]),
+          to: E.rcToSq(best.to[0], best.to[1]),
+          legal: legal.map(m => ({ from: E.rcToSq(m.from[0], m.from[1]), to: E.rcToSq(m.to[0], m.to[1]) }))
+        });
+      }
+      setPuzzles(ps);
+      setLoading(false);
+    }, 30);
+  }
+
+  React.useEffect(() => { genPuzzles(); }, []);
+
+  const puzzle = puzzles[idx];
+
+  function onSquare(sq) {
+    if (!puzzle || feedback) return;
+    const [r, c] = E.sqToRc(sq);
+    const piece = puzzle.board[r][c];
+    const isOwn = piece !== '.' && (puzzle.turn === 'w' ? piece === piece.toUpperCase() : piece === piece.toLowerCase());
+    if (sel) {
+      const hit = hints.find(h => h.sq === sq);
+      if (hit) {
+        const correct = sel === puzzle.from && sq === puzzle.to;
+        if (correct) setScore(s => s + 1);
+        setFeedback({ correct });
+        setTimeout(() => {
+          setFeedback(null); setSel(null); setHints([]);
+          const nextIdx = idx + 1;
+          if (nextIdx >= puzzles.length) {
+            const final = score + (correct ? 1 : 0);
+            setDone(true); saveDrillBest('tactic', final);
+            onFinish && onFinish({ score: final, ok: target != null ? final >= target : true });
+          } else setIdx(nextIdx);
+        }, 700);
+      } else if (isOwn) {
+        setSel(sq);
+        setHints(puzzle.legal.filter(m => m.from === sq).map(m => ({ sq: m.to })));
+      } else { setSel(null); setHints([]); }
+    } else if (isOwn) {
+      setSel(sq);
+      setHints(puzzle.legal.filter(m => m.from === sq).map(m => ({ sq: m.to })));
+    }
+  }
+
+  if (loading) return (
+    <div className="page narrow" style={{ textAlign:'center', paddingTop: 80 }}>
+      <BackBtn onClick={onBack} />
+      <div style={{ fontFamily:'var(--f-display)', fontSize: 28, color:'var(--ink-mute)', fontStyle:'italic' }}>Generating puzzles…</div>
+      <div style={{ marginTop: 16, width: 200, height: 3, background:'var(--rule)', borderRadius:99, margin:'16px auto 0', overflow:'hidden' }}>
+        <div style={{ width:'60%', height:'100%', background:'var(--accent)', borderRadius:99, animation:'lp 1.2s ease-in-out infinite' }} />
+      </div>
+    </div>
+  );
+
+  if (done) return (
+    <div className="page narrow" style={{ textAlign:'center' }}>
+      <BackBtn onClick={onBack} />
+      <Eyebrow accent>Tactical Radar · complete</Eyebrow>
+      <h2 className="display" style={{ fontSize: 44, margin:'12px 0' }}>
+        <em style={{ color:'var(--accent)', fontStyle:'italic' }}>{score}</em>/{TOTAL} correct
+      </h2>
+      {target != null && <div style={{ marginTop:12, fontFamily:'var(--f-display)', fontStyle:'italic', fontSize:18, color: score>=target?'var(--jade)':'var(--crimson)' }}>{score>=target?`Target met (≥${target}).`:`Needed ${target}.`}</div>}
+      <div style={{ marginTop:6, fontFamily:'var(--f-mono)', fontSize:11, color:'var(--ink-mute)', letterSpacing:'0.14em' }}>Personal best: {fmtBest('tactic','/12')}</div>
+      <div style={{ display:'flex', gap:8, justifyContent:'center', marginTop:24 }}>
+        <button className="btn ghost" onClick={onBack}>Back</button>
+        <button className="btn gold" onClick={genPuzzles}>Try again</button>
+      </div>
+    </div>
+  );
+
+  if (!puzzle) return null;
+  const showSolutionHints = feedback ? [{ sq: puzzle.to, capture: false }, { sq: puzzle.from, capture: false }] : hints;
+
   return (
     <div className="page narrow">
       <BackBtn onClick={onBack} />
-      <Eyebrow accent>Coming soon</Eyebrow>
-      <h2 className="display" style={{ fontSize: 36, margin:'12px 0' }}>This drill isn't built yet.</h2>
-      <p style={{ color:'var(--ink-soft)', fontStyle:'italic', fontFamily:'var(--f-display)' }}>
-        Pick a different one for now.
-      </p>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:12 }}>
+        <div>
+          <Eyebrow accent>Tactical Radar · {idx+1}/{puzzles.length}</Eyebrow>
+          <div style={{ fontFamily:'var(--f-display)', fontSize:22, fontWeight:500, marginTop:4 }}>
+            {puzzle.turn==='w'?'White':'Black'} to play — find the best move.
+          </div>
+        </div>
+        <DrillStat label="Score" value={score} />
+      </div>
+      <div style={{ maxWidth:500, margin:'0 auto', position:'relative' }}>
+        <ChessBoard position={puzzle.board} selected={sel} hints={showSolutionHints} onSquare={onSquare} flipped={puzzle.turn==='b'} />
+        {feedback && (
+          <div style={{ position:'absolute', top:0, left:0, right:0, bottom:0, display:'flex', alignItems:'center', justifyContent:'center', background: feedback.correct?'rgba(74,107,74,0.4)':'rgba(184,80,68,0.4)', borderRadius:12, pointerEvents:'none' }}>
+            <div style={{ fontFamily:'var(--f-display)', fontSize:64, color:'#fff', textShadow:'0 2px 8px rgba(0,0,0,0.4)' }}>{feedback.correct?'✓':'✗'}</div>
+          </div>
+        )}
+      </div>
+      <div style={{ textAlign:'center', marginTop:10, fontFamily:'var(--f-mono)', fontSize:11, letterSpacing:'0.16em', textTransform:'uppercase', color:'var(--ink-mute)' }}>
+        {!sel ? 'Select a piece' : 'Select destination'}
+      </div>
     </div>
   );
 }
 
-// -------- HELPERS --------
+// -------- BLINDFOLD LITE --------
+function BlindfoldDrill({ onBack, target = null, onFinish }) {
+  const SHOW_SECS = 4;
+  const QUESTIONS = 6;
+  const E = window.Engine;
+  const PNAMES = { P:'Pawn',N:'Knight',B:'Bishop',R:'Rook',Q:'Queen',K:'King', p:'pawn',n:'knight',b:'bishop',r:'rook',q:'queen',k:'king' };
+
+  const [phase, setPhase] = React.useState('show');
+  const [board, setBoard] = React.useState([]);
+  const [pieces, setPieces] = React.useState([]);
+  const [timer, setTimer] = React.useState(SHOW_SECS);
+  const [qIdx, setQIdx] = React.useState(0);
+  const [question, setQuestion] = React.useState(null);
+  const [score, setScore] = React.useState(0);
+  const [feedback, setFeedback] = React.useState(null);
+
+  function setup() {
+    let g = E.newGame();
+    const moves = 4 + Math.floor(Math.random() * 8);
+    for (let i = 0; i < moves; i++) {
+      const mv = E.aiMove(g, 0); if (!mv) break;
+      g = E.applyMove(g, mv);
+      if (E.isGameOver(g).over) break;
+    }
+    const b = g.board.map(r => [...r]);
+    const ps = [];
+    for (let r = 0; r < 8; r++) for (let co = 0; co < 8; co++) {
+      if (b[r][co] !== '.') ps.push({ piece:b[r][co], sq:E.rcToSq(r,co) });
+    }
+    setBoard(b); setPieces(ps); setTimer(SHOW_SECS); setPhase('show');
+    setQIdx(0); setScore(0); setFeedback(null);
+    if (ps.length) setQuestion(ps[Math.floor(Math.random()*ps.length)]);
+  }
+
+  React.useEffect(() => { setup(); }, []);
+
+  React.useEffect(() => {
+    if (phase !== 'show') return;
+    if (timer <= 0) { setPhase('ask'); return; }
+    const t = setTimeout(() => setTimer(x => x-1), 1000);
+    return () => clearTimeout(t);
+  }, [timer, phase]);
+
+  function nextQuestion(currentScore) {
+    const ni = qIdx + 1;
+    if (ni >= QUESTIONS) {
+      setPhase('done'); saveDrillBest('blindfold', currentScore);
+      onFinish && onFinish({ score: currentScore, ok: target != null ? currentScore >= target : true });
+    } else {
+      setQIdx(ni);
+      setQuestion(pieces[Math.floor(Math.random()*pieces.length)]);
+      setFeedback(null);
+    }
+  }
+
+  function tap(sq) {
+    if (!question || feedback) return;
+    const correct = sq === question.sq;
+    const ns = score + (correct ? 1 : 0);
+    if (correct) setScore(ns);
+    setFeedback({ correct, picked:sq, answer:question.sq });
+    setTimeout(() => nextQuestion(ns), 800);
+  }
+
+  const empty = Array(8).fill(null).map(() => Array(8).fill('.'));
+  const color = (p) => p===p.toUpperCase()?'White':'Black';
+
+  if (phase === 'show') return (
+    <div className="page narrow">
+      <BackBtn onClick={onBack} />
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:10 }}>
+        <div><Eyebrow accent>Blindfold Lite</Eyebrow><div style={{ fontFamily:'var(--f-display)', fontSize:22, fontWeight:500, marginTop:4 }}>Study the position.</div></div>
+        <DrillStat label="Time" value={timer+'s'} />
+      </div>
+      <div style={{ width:'100%', height:4, background:'var(--rule)', borderRadius:99, overflow:'hidden', marginBottom:14 }}>
+        <div style={{ width:(timer/SHOW_SECS*100)+'%', height:'100%', background:'var(--accent)', transition:'width 1s linear', borderRadius:99 }} />
+      </div>
+      <div style={{ maxWidth:500, margin:'0 auto' }}><ChessBoard position={board} /></div>
+    </div>
+  );
+
+  if (phase === 'done') return (
+    <div className="page narrow" style={{ textAlign:'center' }}>
+      <BackBtn onClick={onBack} />
+      <Eyebrow accent>Blindfold Lite · complete</Eyebrow>
+      <h2 className="display" style={{ fontSize:44, margin:'12px 0' }}><em style={{ color:'var(--accent)', fontStyle:'italic' }}>{score}</em>/{QUESTIONS} found</h2>
+      {target != null && <div style={{ marginTop:12, fontFamily:'var(--f-display)', fontStyle:'italic', fontSize:18, color: score>=target?'var(--jade)':'var(--crimson)' }}>{score>=target?`Target met (≥${target}).`:`Needed ${target}.`}</div>}
+      <div style={{ marginTop:6, fontFamily:'var(--f-mono)', fontSize:11, color:'var(--ink-mute)', letterSpacing:'0.14em' }}>Personal best: {fmtBest('blindfold','/6')}</div>
+      <div style={{ display:'flex', gap:8, justifyContent:'center', marginTop:24 }}>
+        <button className="btn ghost" onClick={onBack}>Back</button>
+        <button className="btn gold" onClick={setup}>Play again</button>
+      </div>
+    </div>
+  );
+
+  const fbHints = feedback ? [
+    { sq:question.sq },
+    ...(feedback.picked!==question.sq ? [{ sq:feedback.picked, capture:true }] : [])
+  ] : [];
+
+  return (
+    <div className="page narrow">
+      <BackBtn onClick={onBack} />
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:12 }}>
+        <div><Eyebrow accent>Blindfold Lite · {qIdx+1}/{QUESTIONS}</Eyebrow><div style={{ fontFamily:'var(--f-display)', fontSize:22, fontWeight:500, marginTop:4 }}>Where is the <em style={{ color:'var(--accent)', fontStyle:'italic' }}>{color(question?.piece||'P')} {PNAMES[question?.piece||'P']}</em>?</div></div>
+        <DrillStat label="Score" value={score} />
+      </div>
+      <div style={{ maxWidth:500, margin:'0 auto' }}><ChessBoard position={empty} onSquare={tap} hints={fbHints} /></div>
+      {feedback && <div style={{ textAlign:'center', marginTop:10, fontFamily:'var(--f-display)', fontStyle:'italic', fontSize:20, color: feedback.correct?'var(--jade)':'var(--crimson)' }}>{feedback.correct?'✓ Correct!':'✗ It was '+question?.sq?.toUpperCase()}</div>}
+    </div>
+  );
+}
+
+// -------- MULTI DRILL CHALLENGE (level 13) --------
+function MultiDrillChallenge({ opp, player, onFinish, onBack }) {
+  const PHASES = [
+    { id:'vision',    label:'Vision Trainer',  target:8,   unit:' correct' },
+    { id:'reaction',  label:'Move Reaction',   target:6,   unit:' pts' },
+    { id:'hunt',      label:'Piece Hunt',      target:65,  unit:'%' },
+    { id:'tactic',    label:'Tactical Radar',  target:5,   unit:'/12' },
+    { id:'blindfold', label:'Blindfold Lite',  target:3,   unit:'/6' }
+  ];
+  const [phase, setPhase] = React.useState(0);
+  const [results, setResults] = React.useState({});
+  const [finished, setFinished] = React.useState(false);
+
+  function handleResult(phaseResult) {
+    const p = PHASES[phase];
+    const nr = { ...results, [p.id]: phaseResult };
+    setResults(nr);
+    if (phase + 1 >= PHASES.length) {
+      setFinished(true);
+      const allPassed = Object.values(nr).every(r => r.ok);
+      onFinish({ outcome: allPassed ? 'win' : 'loss', moves: 0 });
+    } else {
+      setPhase(ph => ph + 1);
+    }
+  }
+
+  if (finished) return null;
+
+  const header = (
+    <div style={{ background:'var(--bg-inset)', padding:'10px 16px', borderBottom:'1px solid var(--rule)', display:'flex', gap:10, flexWrap:'wrap', alignItems:'center' }}>
+      <span style={{ fontFamily:'var(--f-mono)', fontSize:10, letterSpacing:'0.18em', textTransform:'uppercase', color:'var(--accent)', marginRight:4 }}>The Grand Trial</span>
+      {PHASES.map((p, i) => {
+        const res = results[p.id];
+        const col = i===phase?'var(--accent)':res?(res.ok?'var(--jade)':'var(--crimson)'):'var(--ink-mute)';
+        return <span key={p.id} style={{ fontFamily:'var(--f-mono)', fontSize:10, letterSpacing:'0.14em', textTransform:'uppercase', color:col }}>
+          {res?(res.ok?'✓ ':'✗ '):(i===phase?'▶ ':'○ ')}{p.label}
+        </span>;
+      })}
+    </div>
+  );
+
+  const p = PHASES[phase];
+  const props = { onBack, target: p.target, onFinish: handleResult };
+  const drills = { vision:<VisionDrill {...props}/>, reaction:<MoveReactionDrill {...props}/>, hunt:<PieceHuntDrill {...props}/>, tactic:<TacticalRadarDrill {...props}/>, blindfold:<BlindfoldDrill {...props}/> };
+
+  return <div>{header}{drills[p.id] || null}</div>;
+}
+
+// -------- DRILL RUNNER --------
+function DrillRunner({ drillId, onBack, target = null, onFinish }) {
+  if (drillId === "vision")    return <VisionDrill onBack={onBack} target={target} onFinish={onFinish} />;
+  if (drillId === "reaction")  return <MoveReactionDrill onBack={onBack} target={target} onFinish={onFinish} />;
+  if (drillId === "hunt")      return <PieceHuntDrill onBack={onBack} target={target} onFinish={onFinish} />;
+  if (drillId === "tactic")    return <TacticalRadarDrill onBack={onBack} target={target} onFinish={onFinish} />;
+  if (drillId === "blindfold") return <BlindfoldDrill onBack={onBack} target={target} onFinish={onFinish} />;
+  return (
+    <div className="page narrow">
+      <BackBtn onClick={onBack} />
+      <Eyebrow accent>Coming soon</Eyebrow>
+      <h2 className="display" style={{ fontSize:36, margin:'12px 0' }}>This drill is not available yet.</h2>
+    </div>
+  );
+}
+
+Object.assign(window, { VisionDrill, MoveReactionDrill, PieceHuntDrill, TacticalRadarDrill, BlindfoldDrill, MultiDrillChallenge, DrillRunner });
 function emptyBoard() {
   const b = [];
   for (let r = 0; r < 8; r++) { const row = []; for (let c = 0; c < 8; c++) row.push("."); b.push(row); }
@@ -5910,7 +6328,7 @@ function App() {
     seenActIntros: []
   };
   const DEFAULT_PLAYER = {
-    name: "Alex",
+    name: "",
     surname: "",
     elo: 600,
     xp: 0,
@@ -5931,9 +6349,12 @@ function App() {
   React.useEffect(() => { try { localStorage.setItem('cm_progress', JSON.stringify(progress)); } catch(e){} }, [progress]);
 
   function resetProgress() {
-    if (!window.confirm('Reset all Odysseia progress? This clears your XP, Elo, completed levels, and achievements.')) return;
-    setProgress(DEFAULT_PROGRESS);
-    setPlayer({ ...DEFAULT_PLAYER, name: player.name }); // keep name
+    if (!window.confirm('Reset EVERYTHING? Your name, progress, XP, Elo, and all achievements will be deleted. You will start from scratch.')) return;
+    localStorage.removeItem('cm_player');
+    localStorage.removeItem('cm_progress');
+    setProgress({ ...DEFAULT_PROGRESS, journal: [] });
+    setPlayer({ ...DEFAULT_PLAYER, name: '' });
+    nav('hub');
   }
 
   // ── Trophy awarding ─────────────────────────────────────
@@ -6031,28 +6452,51 @@ function App() {
 
   function finishBattle(opp, result) {
     const won = result.outcome === 'win';
-    const stars = won ? (result.outcome === 'flawless' ? 3 : 2 + Math.floor(Math.random() * 2)) : 0;
+    const draw = result.outcome === 'draw';
+    const stars = won ? (result.moves < 25 ? 3 : result.moves < 40 ? 2 : 1) : 0;
     const wasFirstClear = !progress.completed.includes(opp.id);
 
     const newProg = { ...progress };
     if (won && wasFirstClear) newProg.completed = [...progress.completed, opp.id];
     if (won) newProg.stars = { ...progress.stars, [opp.id]: Math.max(progress.stars[opp.id] || 0, stars) };
     newProg.wins = (progress.wins || 0) + (won ? 1 : 0);
-    newProg.losses = (progress.losses || 0) + (won ? 0 : 1);
+    newProg.losses = (progress.losses || 0) + (!won && !draw ? 1 : 0);
+
+    // XP: full only on first clear, small on replay win, zero on loss
+    const xpGain = won && wasFirstClear ? opp.rewardXP
+                 : won ? Math.round(opp.rewardXP * 0.08)
+                 : 0;
+    const eloChange = won ? Math.max(5, Math.round((opp.elo - (player.elo || 600)) * 0.04) + 10) : (draw ? 2 : -8);
+
+    // Journal entry — opponent-specific narrative
+    const today = new Date();
+    const dateStr = today.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    const entryData = (window.JOURNAL_ENTRIES || {})[opp.id];
+    const variant = entryData ? (won ? entryData.win : entryData.loss) : null;
+    const journalEntry = {
+      id: Date.now(),
+      date: dateStr,
+      opponent: opp.name,
+      result: won ? 'win' : draw ? 'draw' : 'loss',
+      title: variant ? variant.title : (won ? (wasFirstClear ? `Defeated ${opp.name}` : `Rematch: ${opp.name}`) : `Lost to ${opp.name}`),
+      body: variant ? variant.body : (won ? `${opp.name} played well but the position was mine in the end.` : `${opp.name} outplayed me today. I'll study this one.`),
+      moves: result.moves,
+      elo: player.elo || 600,
+      eloAfter: (player.elo || 600) + eloChange
+    };
+    newProg.journal = [journalEntry, ...(progress.journal || [])].slice(0, 50);
     setProgress(newProg);
 
-    // award XP & Elo to player
-    const xpGain = won ? opp.rewardXP : Math.round(opp.rewardXP * 0.2);
-    const eloChange = won ? 25 : -10;
     setPlayer(p => ({ ...p, xp: (p.xp || 0) + xpGain, elo: Math.max(100, (p.elo || 600) + eloChange) }));
 
     setPostModal({
-      opp, won, stars,
+      opp, won, draw, stars,
       xp: xpGain,
       eloChange,
+      wasFirstClear,
       moves: result.moves,
-      newUnlock: won && opp.unlockTheme,
-      newAct: won && opp.actCloser ? window.ACTS.find(a => a.id === opp.act + 1) : null
+      newUnlock: won && wasFirstClear && opp.unlockTheme,
+      newAct: won && wasFirstClear && opp.actCloser ? window.ACTS.find(a => a.id === opp.act + 1) : null
     });
   }
 
@@ -6093,14 +6537,30 @@ function App() {
     nav('battle', { opp });
   }
 
+  // ── Onboarding gate ──────────────────────────────────────
+  if (!player.name) {
+    return (
+      <div className="app">
+        <PlayerSetup onComplete={(name) => setPlayer(p => ({ ...p, name }))} />
+      </div>
+    );
+  }
+
   return (
     <div className="app">
-      <TopBar player={player} onNav={nav} t={t} setTweak={setTweak} />
+      <TopBar player={player} onNav={nav} t={t} setTweak={setTweak} onCheat={triggerCheat} />
 
       {route.name === 'hub' && <HubScreen player={player} setPlayer={setPlayer} progress={progress} onNav={nav} onOpenStory={openOdysseia} />}
       {route.name === 'map' && <OdysseiaMap progress={progress} onSelectLevel={selectLevel} onBack={() => nav('hub')} />}
       {route.name === 'dossier' && <Dossier opp={route.opp} onChallenge={(kind) => challengeOpp(route.opp, kind)} onBack={() => nav('map')} />}
-      {route.name === 'battle' && <Battle opp={route.opp} onFinish={(r) => finishBattle(route.opp, r)} onBack={() => nav('map')} />}
+      {route.name === 'battle' && (() => {
+        const opp = route.opp;
+        if (!opp) return null;
+        const dc = opp.drillChallenge;
+        if (dc && dc.type === 'multi') return <MultiDrillChallenge opp={opp} player={player} onFinish={(r) => finishBattle(opp, r)} onBack={() => nav('map')} />;
+        if (dc) return <DrillRunner drillId={dc.type} target={dc.goal} onBack={() => nav('map')} onFinish={(r) => finishBattle(opp, { outcome: r.ok ? 'win' : 'loss', moves: 0 })} />;
+        return <Battle opp={opp} player={player} onFinish={(r) => finishBattle(opp, r)} onBack={() => nav('map')} />;
+      })()}
       {route.name === 'play' && <PlayScreen onBack={() => nav('hub')} />}
       {route.name === 'drills' && <DrillsScreen onBack={() => nav('hub')} onPickDrill={(d) => nav('drill', { drillId: d.id })} />}
       {route.name === 'drill' && <DrillRunner drillId={route.drillId} onBack={() => nav('drills')} onFinish={(r) => handleDrillFinish(route.drillId, r)} />}
@@ -6149,12 +6609,70 @@ function App() {
 }
 
 // =========================================================
+// PLAYER SETUP — onboarding screen for new players
+// =========================================================
+function PlayerSetup({ onComplete }) {
+  const [name, setName] = React.useState('');
+  return (
+    <div className="cutscene" style={{ background: 'var(--bg)' }}>
+      <div style={{ maxWidth: 440, width: '100%', textAlign: 'center', padding: '0 24px' }}>
+        <div style={{ fontFamily: 'var(--f-display)', fontSize: 80, lineHeight: 1, marginBottom: 12, color: 'var(--accent)' }}>♔</div>
+        <div className="eyebrow accent" style={{ marginBottom: 8 }}>New Journey</div>
+        <h1 className="display" style={{ fontSize: 'clamp(32px,8vw,56px)', margin: '0 0 8px', letterSpacing: '-0.02em' }}>
+          What is your name?
+        </h1>
+        <p style={{ fontFamily: 'var(--f-display)', fontStyle: 'italic', color: 'var(--ink-soft)', fontSize: 18, marginBottom: 28, lineHeight: 1.5 }}>
+          Your name will appear in every game, every journal entry, and every victory.
+        </p>
+        <input
+          style={{
+            width: '100%', padding: '14px 18px', fontSize: 20,
+            fontFamily: 'var(--f-display)', border: '1px solid var(--rule)',
+            borderRadius: 12, background: 'var(--bg-elev)', color: 'var(--ink)',
+            outline: 'none', textAlign: 'center', letterSpacing: '-0.01em',
+            boxSizing: 'border-box'
+          }}
+          value={name}
+          onChange={e => setName(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && name.trim() && onComplete(name.trim())}
+          placeholder="Your name…"
+          autoFocus
+          maxLength={20}
+        />
+        <button
+          className="btn gold large"
+          disabled={!name.trim()}
+          onClick={() => onComplete(name.trim())}
+          style={{ marginTop: 16, width: '100%', opacity: name.trim() ? 1 : 0.4 }}
+        >
+          Begin the Odysseia →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// =========================================================
 // TOP BAR
 // =========================================================
-function TopBar({ player, onNav, t, setTweak }) {
+function TopBar({ player, onNav, t, setTweak, onCheat }) {
+  // Mobile cheat: tap logo 5× within 2s
+  const tapRef = React.useRef({ count: 0, timer: null });
+  function handleBrandTap() {
+    tapRef.current.count++;
+    if (tapRef.current.timer) clearTimeout(tapRef.current.timer);
+    if (tapRef.current.count >= 5) {
+      tapRef.current.count = 0;
+      onCheat && onCheat();
+      return;
+    }
+    tapRef.current.timer = setTimeout(() => { tapRef.current.count = 0; }, 2000);
+    onNav('hub');
+  }
+
   return (
     <div className="topbar">
-      <button className="brand" onClick={() => onNav('hub')} style={{ background:'none', border:0, padding:0 }} aria-label="Home">
+      <button className="brand" onClick={handleBrandTap} style={{ background:'none', border:0, padding:0, WebkitTapHighlightColor:'transparent' }} aria-label="Home">
         <div className="mark">M</div>
         <span>ChessMind</span>
         <small>Odysseia · v3</small>
@@ -6165,14 +6683,10 @@ function TopBar({ player, onNav, t, setTweak }) {
           {t.theme === 'dark' ? (
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
               <circle cx="12" cy="12" r="4.5" />
-              <line x1="12" y1="2" x2="12" y2="5" />
-              <line x1="12" y1="19" x2="12" y2="22" />
-              <line x1="2" y1="12" x2="5" y2="12" />
-              <line x1="19" y1="12" x2="22" y2="12" />
-              <line x1="4.5" y1="4.5" x2="6.6" y2="6.6" />
-              <line x1="17.4" y1="17.4" x2="19.5" y2="19.5" />
-              <line x1="4.5" y1="19.5" x2="6.6" y2="17.4" />
-              <line x1="17.4" y1="6.6" x2="19.5" y2="4.5" />
+              <line x1="12" y1="2" x2="12" y2="5" /><line x1="12" y1="19" x2="12" y2="22" />
+              <line x1="2" y1="12" x2="5" y2="12" /><line x1="19" y1="12" x2="22" y2="12" />
+              <line x1="4.5" y1="4.5" x2="6.6" y2="6.6" /><line x1="17.4" y1="17.4" x2="19.5" y2="19.5" />
+              <line x1="4.5" y1="19.5" x2="6.6" y2="17.4" /><line x1="17.4" y1="6.6" x2="19.5" y2="4.5" />
             </svg>
           ) : (
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -6182,10 +6696,8 @@ function TopBar({ player, onNav, t, setTweak }) {
         </IconBtn>
         <IconBtn title="Statistics" onClick={() => onNav('stats')}>
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-            <line x1="6" y1="20" x2="6" y2="12" />
-            <line x1="12" y1="20" x2="12" y2="6" />
-            <line x1="18" y1="20" x2="18" y2="14" />
-            <line x1="3" y1="20" x2="21" y2="20" />
+            <line x1="6" y1="20" x2="6" y2="12" /><line x1="12" y1="20" x2="12" y2="6" />
+            <line x1="18" y1="20" x2="18" y2="14" /><line x1="3" y1="20" x2="21" y2="20" />
           </svg>
         </IconBtn>
         <div className="avatar-chip" onClick={() => onNav('stats')}>
